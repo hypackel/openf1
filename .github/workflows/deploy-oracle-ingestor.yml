@@ -1,0 +1,38 @@
+name: Deploy ingestor to Oracle
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup SSH key
+        run: |
+          echo "${{ secrets.ORACLE_SSH_KEY }}" > oracle_key
+          chmod 600 oracle_key
+
+      - name: Deploy to Oracle VM
+        env:
+          ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
+          ORACLE_USER: ${{ secrets.ORACLE_USER }}
+          MONGO_CONNECTION_STRING: ${{ secrets.MONGO_CONNECTION_STRING }}
+        run: |
+          ssh -o StrictHostKeyChecking=no -i oracle_key ${ORACLE_USER}@${ORACLE_HOST} '
+            cd ~/openf1 || git clone https://github.com/br-g/openf1.git ~/openf1
+            cd ~/openf1
+            git fetch origin
+            git reset --hard origin/main
+            docker build -t openf1:latest .
+            docker rm -f openf1-ingestor || true
+            docker run -d \
+              --name openf1-ingestor \
+              --restart=always \
+              -e ROLE=ingest-realtime \
+              -e MONGO_CONNECTION_STRING="'"$MONGO_CONNECTION_STRING"'" \
+              openf1:latest
+          '
