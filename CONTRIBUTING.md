@@ -1,4 +1,4 @@
-# Contributing to OpenF1
+# Contributing to OpenF1 
 
 OpenF1's mission is to democratize Formula 1 data by making it open and accessible to everyone.<br />
 We welcome all contributions that help advance this goal!
